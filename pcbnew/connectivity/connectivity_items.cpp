@@ -150,7 +150,9 @@ CN_ITEM* CN_LIST::Add( PAD* pad )
     if( !pad->IsOnCopperLayer() )
          return nullptr;
 
-    auto item = new CN_ITEM( pad, false, 1 );
+    // Allow unconnected pads (net 0) to change their net for PCB-only workflows
+    bool canChangeNet = ( pad->GetNetCode() == 0 );
+    auto item = new CN_ITEM( pad, canChangeNet, 1 );
 
     std::set<VECTOR2I> uniqueAnchors;
     pad->Padstack().ForEachUniqueLayer(

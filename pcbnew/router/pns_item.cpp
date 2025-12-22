@@ -188,7 +188,23 @@ bool ITEM::collideSimple( const ITEM* aHead, const NODE* aNode, int aLayer,
     if( Kind() == HOLE_T && aHead->Kind() == HOLE_T )
         differentNetsOnly = false;
 
-    if( differentNetsOnly && Net() == aHead->Net() && aHead->Net() )
+    // For PCB-only workflows: allow net 0 (unconnected) items to connect to anything
+    // NET_HANDLE is a pointer to NETINFO_ITEM, so we need to check the actual net code
+    // Get the orphaned (unconnected) net handle
+    NET_HANDLE orphanedNet = iface ? iface->GetOrphanedNetHandle() : nullptr;
+
+    // Treat unconnected items (orphaned net or net code 0) as connectable to anything
+    bool thisIsUnconnected = (Net() == orphanedNet) ||
+                             (iface && Net() && iface->GetNetCode(Net()) == 0);
+    bool headIsUnconnected = (aHead->Net() == orphanedNet) ||
+                             (iface && aHead->Net() && iface->GetNetCode(aHead->Net()) == 0);
+
+    if( thisIsUnconnected || headIsUnconnected )
+    {
+        // Unconnected items can connect to anything - no clearance!
+        clearance = -1;
+    }
+    else if( differentNetsOnly && Net() == aHead->Net() && aHead->Net() )
     {
         // same nets? no clearance!
         clearance = -1;

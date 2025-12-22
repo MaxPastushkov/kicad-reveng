@@ -33,6 +33,7 @@
 #include "pns_walkaround.h"
 #include "pns_mouse_trail_tracer.h"
 
+#include <netinfo.h>
 #include <wx/log.h>
 
 namespace PNS {
@@ -1385,7 +1386,12 @@ bool LINE_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
     m_currentStart = VECTOR2I( aP );
     m_fixStart =  VECTOR2I( aP );
     m_currentEnd = VECTOR2I( aP );
+
+    // Determine the net for this routing operation
+    // Use the start item's net if it exists, otherwise use orphaned net handle
+    // For PCB-only workflow: nets will be auto-generated during commit if routing unconnected items
     m_currentNet = aStartItem ? aStartItem->Net() : Router()->GetInterface()->GetOrphanedNetHandle();
+
     m_startItem = aStartItem;
     m_placingVia = false;
     m_chainedPlacement = false;
@@ -1629,8 +1635,19 @@ bool LINE_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinis
     if( l.PointCount() > 2 )
         p_pre_last = l.CPoints()[ l.PointCount() - 2 ];
 
-    if( aEndItem && m_currentNet && m_currentNet == aEndItem->Net() )
-        realEnd = true;
+    // Check if we're connecting to an item
+    // For PCB-only workflows: auto-finish when connecting net 0 to anything
+    if( aEndItem && m_currentNet )
+    {
+        // Get the net code for the current net
+        int currentNetCode = m_router->GetInterface()->GetNetCode( m_currentNet );
+
+        // Auto-finish if:
+        // 1. Connecting to same net (normal case), OR
+        // 2. Current net is 0 (unconnected - can connect to anything)
+        if( m_currentNet == aEndItem->Net() || currentNetCode == 0 )
+            realEnd = true;
+    }
 
     if( aForceFinish )
         realEnd = true;

@@ -258,6 +258,16 @@ void TOOL_BASE::highlightNets( bool aEnabled, std::set<NET_HANDLE> aNets )
     for( const NET_HANDLE& net : aNets )
         netcodes.insert( m_router->GetInterface()->GetNetCode( net ) );
 
+    // For PCB-only workflows: Don't highlight net 0 (unconnected), as it should
+    // be able to connect to anything without dimming other nets
+    if( netcodes.size() == 1 && netcodes.count( 0 ) > 0 )
+    {
+        // Routing with net 0 - disable highlighting to keep all nets at normal brightness
+        rs->SetHighlight( m_startHighlightNetcodes, m_startHighlightNetcodes.size() > 0 );
+        getView()->UpdateAllLayersColor();
+        return;
+    }
+
     if( netcodes.size() > 0 && aEnabled )
     {
         // If the user has previously set some of the routed nets to be highlighted,
