@@ -100,11 +100,7 @@ for ref in wip_symbols:
   symbol = schem.symbol.reference_matches(ref)[0]
   if symbol.lib_symbol and 'symbol' in symbol.lib_symbol:
     
-    try:
-      unit_list = [int(s.value.split('_')[-2]) for s in symbol.lib_symbol.symbol] # Get all unit 
-    except:
-      print([s.value for s in symbol.lib_symbol.symbol])
-      sys.exit(1)
+    unit_list = [int(s.value.split('_')[-2]) for s in symbol.lib_symbol.symbol] # Get all units
     unit_set = set(filter(lambda a : a > 0, unit_list)) # Ignore unit 0 (special), and keep only unique ones (ignore alternates)
     num_units = len(unit_set)
     
