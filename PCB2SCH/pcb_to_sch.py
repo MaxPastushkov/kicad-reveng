@@ -49,6 +49,8 @@ for t in templates:
     print(f"Error: Missing template for {t}. Please create a symbol with reference \"{t}ref\".")
     sys.exit(1)
 
+print("Placing symbols...")
+
 count = 0
 wip_symbols = []
 for f in pcb.footprint:
@@ -95,6 +97,8 @@ Save the file and hit enter here: """)
 
 schem.reload()
 
+print("Placing remaining units...")
+
 # Add all of the unplaced units
 for ref in wip_symbols:
   symbol = schem.symbol.reference_matches(ref)[0]
@@ -112,12 +116,40 @@ for ref in wip_symbols:
   else:
     print(f"Warning: Library did not load for {ref}. Please check in KiCad.")
 
+print("Rearranging symbols...")
+
 # Rearrange all of the symbols
 count = 0
 sorted_symbols = sorted(filter(lambda s : s.Reference.value not in ignored_symbols, schem.symbol), key=cmp_to_key(compare_symbols))
 for symbol in sorted_symbols:
     symbol.move(*get_coords(count))
     count += 1
+
+print("Copying nets...")
+
+# Write nets to schematic
+netlist = []
+for f in pcb.footprint:
+  if f.property.Reference.value == 'R65':
+    pass
+  for p in f.pad:
+    if hasattr(p, 'net'):
+      
+      # Look for existing net
+      net = None
+      for n in netlist:
+        if n[1] == p.net.value:
+          net = n
+          break
+        
+      if not net:
+        netlist.append([SexpSymbol('net'), p.net.value])
+        net = netlist[-1]
+      
+      net.append([[SexpSymbol('reference'), f.property.Reference.value], [SexpSymbol('pin'), p.value[0]]])
+
+for n in netlist:
+  schem.new_from_list(n)
 
 schem.write(SCH_FILEPATH)
 print("Second phase complete. Reload schematic in KiCad.")

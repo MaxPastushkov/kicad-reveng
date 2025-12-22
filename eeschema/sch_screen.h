@@ -517,6 +517,11 @@ public:
         return m_sheetInstances;
     }
 
+    const std::vector<PCB_NET>& GetPcbNets() const
+    {
+        return m_pcbNets;
+    }
+
     const KIID& GetUuid() const { return m_uuid; }
 
     void AssignNewUuid() { m_uuid = KIID(); }
@@ -704,6 +709,14 @@ private:
      */
     std::vector<SCH_SYMBOL_INSTANCE> m_symbolInstances;
     std::vector<SCH_SHEET_INSTANCE> m_sheetInstances;
+
+    /**
+     * PCB net information loaded from the schematic file.
+     *
+     * This is used to store net connectivity data from the PCB, allowing reference to
+     * PCB nets when positioning components or performing other operations.
+     */
+    std::vector<PCB_NET> m_pcbNets;
 
     /**
      * A unique identifier for each schematic file.

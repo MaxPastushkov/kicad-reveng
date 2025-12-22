@@ -117,6 +117,26 @@ struct SCH_SYMBOL_INSTANCE
 
 
 /**
+ * A simple container for PCB net pin information.
+ */
+struct PCB_NET_PIN
+{
+    wxString m_Reference;  // Component reference (e.g., "R75")
+    wxString m_Pin;        // Pin number (e.g., "2")
+};
+
+
+/**
+ * A simple container for PCB net information loaded from the schematic file.
+ */
+struct PCB_NET
+{
+    wxString m_Name;                  // Net name (e.g., "Net-(PCB-1)")
+    std::vector<PCB_NET_PIN> m_Pins;  // List of pins connected to this net
+};
+
+
+/**
  * Variant information for a schematic sheet.
  *
  * Schematic sheet variants are a set of field and/or properties differentials against the default sheet

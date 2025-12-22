@@ -2673,6 +2673,66 @@ void SCH_IO_KICAD_SEXPR_PARSER::parseSchSymbolInstances( SCH_SCREEN* aScreen )
 }
 
 
+void SCH_IO_KICAD_SEXPR_PARSER::parsePcbNet( SCH_SCREEN* aScreen )
+{
+    wxCHECK_RET( CurTok() == T_net,
+                 "Cannot parse " + GetTokenString( CurTok() ) + " as a net token." );
+    wxCHECK( aScreen, /* void */ );
+
+    T token;
+    PCB_NET net;
+
+    // Parse the net name
+    NeedSYMBOL();
+    net.m_Name = FromUTF8();
+
+    // Parse all pins in this net
+    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    {
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
+        token = NextTok();
+
+        if( token == T_LEFT )
+        {
+            // Start of a pin entry - expect (reference ...) (pin ...)
+            PCB_NET_PIN pin;
+
+            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            {
+                if( token != T_LEFT )
+                    Expecting( T_LEFT );
+
+                token = NextTok();
+
+                switch( token )
+                {
+                case T_reference:
+                    NeedSYMBOL();
+                    pin.m_Reference = FromUTF8();
+                    NeedRIGHT();
+                    break;
+
+                case T_pin:
+                    NeedSYMBOL();
+                    pin.m_Pin = FromUTF8();
+                    NeedRIGHT();
+                    break;
+
+                default:
+                    Expecting( "reference or pin" );
+                }
+            }
+
+            net.m_Pins.emplace_back( pin );
+        }
+    }
+
+    aScreen->m_pcbNets.emplace_back( net );
+}
+
+
 void SCH_IO_KICAD_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly,
                                                 int aFileVersion )
 {
@@ -3019,10 +3079,13 @@ void SCH_IO_KICAD_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopya
             break;
         }
 
+        case T_net:
+            parsePcbNet( screen );
+            break;
 
         default:
             Expecting( "bitmap, bus, bus_alias, bus_entry, class_label, embedded_files, global_label, "
-                       "hierarchical_label, junction, label, line, no_connect, page, paper, rule_area, "
+                       "hierarchical_label, junction, label, line, net, no_connect, page, paper, rule_area, "
                        "sheet, symbol, symbol_instances, text, title_block" );
         }
     }
