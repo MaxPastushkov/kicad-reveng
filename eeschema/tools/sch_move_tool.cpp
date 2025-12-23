@@ -1022,16 +1022,16 @@ SCH_SELECTION& SCH_MOVE_TOOL::prepareSelection( bool& aUnselect )
     SCH_SELECTION& userSelection = m_selectionTool->GetSelection();
 
     // Debug: Access PCB nets from the screen
-    const std::vector<PCB_NET>& nets = m_frame->GetScreen()->GetPcbNets();
-    wxLogMessage( wxT("Number of PCB nets loaded: %zu"), nets.size() );
-    for( const auto& net : nets )
-    {
-        wxLogMessage( wxT("Net: %s with %zu pins"), net.m_Name, net.m_Pins.size() );
-        for( const auto& pin : net.m_Pins )
-        {
-            wxLogMessage( wxT("  - %s pin %s"), pin.m_Reference, pin.m_Pin );
-        }
-    }
+    // const std::vector<PCB_NET>& nets = m_frame->GetScreen()->GetPcbNets();
+    // wxLogMessage( wxT("Number of PCB nets loaded: %zu"), nets.size() );
+    // for( const auto& net : nets )
+    // {
+    //     wxLogMessage( wxT("Net: %s with %zu pins"), net.m_Name, net.m_Pins.size() );
+    //     for( const auto& pin : net.m_Pins )
+    //     {
+    //         wxLogMessage( wxT("  - %s pin %s"), pin.m_Reference, pin.m_Pin );
+    //     }
+    // }
 
     // If a single pin is selected, promote the move selection to its parent symbol
     if( userSelection.GetSize() == 1 )
@@ -2645,27 +2645,39 @@ void SCH_MOVE_TOOL::updatePcbNetLines( SCH_COMMIT* aCommit )
     SCH_SCREEN* screen = m_frame->GetScreen();
     const std::vector<PCB_NET>& nets = screen->GetPcbNets();
 
+    wxLogMessage( wxT("updatePcbNetLines called, nets.size()=%zu"), nets.size() );
+
     if( nets.empty() )
+    {
+        wxLogMessage( wxT("No PCB nets found, returning") );
         return;
+    }
 
     // TODO: Remove old PCB net lines before creating new ones
     // For now, we'll just create new lines each time
 
     for( const PCB_NET& net : nets )
     {
+        wxLogMessage( wxT("Processing net: %s with %zu pins"), net.m_Name, net.m_Pins.size() );
+
         // For each net, draw lines between all connected pins
         std::vector<VECTOR2I> pinPositions;
 
         // Collect positions of all pins in this net
         for( const PCB_NET_PIN& netPin : net.m_Pins )
         {
+            wxLogMessage( wxT("  Looking for pin: %s-%s"), netPin.m_Reference, netPin.m_Pin );
+
             // Find the symbol with this reference
             for( SCH_ITEM* item : screen->Items().OfType( SCH_SYMBOL_T ) )
             {
                 SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
+                wxString ref = symbol->GetRef( &m_frame->GetCurrentSheet() );
 
-                if( symbol->GetRef( &m_frame->GetCurrentSheet() ) == netPin.m_Reference )
+                if( ref == netPin.m_Reference )
                 {
+                    wxLogMessage( wxT("    Found symbol: %s"), ref );
+
                     // Find the pin with this number
                     SCH_PIN* pin = symbol->GetPin( netPin.m_Pin );
 
@@ -2673,11 +2685,18 @@ void SCH_MOVE_TOOL::updatePcbNetLines( SCH_COMMIT* aCommit )
                     {
                         VECTOR2I pinPos = symbol->GetPinPhysicalPosition( pin );
                         pinPositions.push_back( pinPos );
+                        wxLogMessage( wxT("    Pin found at position: (%d, %d)"), pinPos.x, pinPos.y );
+                    }
+                    else
+                    {
+                        wxLogMessage( wxT("    Pin %s not found in symbol"), netPin.m_Pin );
                     }
                     break;
                 }
             }
         }
+
+        wxLogMessage( wxT("  Total pin positions found: %zu"), pinPositions.size() );
 
         // Draw lines connecting all pins in a star topology (all to first pin)
         if( pinPositions.size() >= 2 )
@@ -2691,12 +2710,18 @@ void SCH_MOVE_TOOL::updatePcbNetLines( SCH_COMMIT* aCommit )
                 netLine->SetLineStyle( LINE_STYLE::DOT );
                 netLine->SetLineWidth( schIUScale.MilsToIU( 5 ) );  // Thin dotted line
 
+                wxLogMessage( wxT("  Creating line from (%d,%d) to (%d,%d)"),
+                            centerPin.x, centerPin.y,
+                            pinPositions[i].x, pinPositions[i].y );
+
                 // Add to screen
                 screen->Append( netLine );
 
                 if( aCommit )
                     aCommit->Added( netLine, screen );
             }
+
+            wxLogMessage( wxT("  Created %zu lines for net %s"), pinPositions.size() - 1, net.m_Name );
         }
     }
 }
