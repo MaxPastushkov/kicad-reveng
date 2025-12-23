@@ -2688,8 +2688,8 @@ void SCH_MOVE_TOOL::updatePcbNetLines( SCH_COMMIT* aCommit )
             {
                 SCH_LINE* netLine = new SCH_LINE( centerPin, LAYER_NOTES );
                 netLine->SetEndPoint( pinPositions[i] );
-                netLine->SetLineStyle( PLOT_DASH_TYPE::DOT );
-                netLine->SetLineWidth( 2 );  // Thin dotted line
+                netLine->SetLineStyle( LINE_STYLE::DOT );
+                netLine->SetLineWidth( schIUScale.MilsToIU( 5 ) );  // Thin dotted line
 
                 // Add to screen
                 screen->Append( netLine );
