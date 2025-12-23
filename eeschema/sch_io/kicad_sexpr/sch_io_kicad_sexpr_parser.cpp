@@ -3151,8 +3151,8 @@ void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
 
                     if( pin )
                     {
-                        VECTOR2I pinPos = symbol->GetPinPhysicalPosition( pin );
-                        wxLogMessage( wxT("    Pin physical position: (%d, %d)"), pinPos.x, pinPos.y );
+                        VECTOR2I pinPos = pin->GetPosition();
+                        wxLogMessage( wxT("    Pin position: (%d, %d)"), pinPos.x, pinPos.y );
                         pinPositions.push_back( pinPos );
                         pinRefs.push_back( netPin.m_Reference + wxT("-") + netPin.m_Pin );
                     }
