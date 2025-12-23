@@ -159,6 +159,9 @@ private:
     void finalizeMoveOperation( SCH_SELECTION& aSelection, SCH_COMMIT* aCommit, bool aUnselect,
                                 const std::vector<DANGLING_END_ITEM>& aInternalPoints );
 
+    ///< Update PCB net visualization lines based on loaded net data
+    void updatePcbNetLines( SCH_COMMIT* aCommit );
+
 private:
     ///< Re-entrancy guard
     bool                  m_inMoveTool;

@@ -1759,6 +1759,9 @@ void SCH_MOVE_TOOL::finalizeMoveOperation( SCH_SELECTION& aSelection, SCH_COMMIT
         m_toolMgr->RunAction( ACTIONS::selectionClear );
     else
         m_selectionTool->RebuildSelection();  // Schematic cleanup might have merged lines, etc.
+
+    // Update PCB net visualization lines after the move
+    updatePcbNetLines( aCommit );
 }
 
 
@@ -2634,6 +2637,68 @@ void SCH_MOVE_TOOL::clearNewDragLines()
     }
 
     m_newDragLines.clear();
+}
+
+
+void SCH_MOVE_TOOL::updatePcbNetLines( SCH_COMMIT* aCommit )
+{
+    SCH_SCREEN* screen = m_frame->GetScreen();
+    const std::vector<PCB_NET>& nets = screen->GetPcbNets();
+
+    if( nets.empty() )
+        return;
+
+    // TODO: Remove old PCB net lines before creating new ones
+    // For now, we'll just create new lines each time
+
+    for( const PCB_NET& net : nets )
+    {
+        // For each net, draw lines between all connected pins
+        std::vector<VECTOR2I> pinPositions;
+
+        // Collect positions of all pins in this net
+        for( const PCB_NET_PIN& netPin : net.m_Pins )
+        {
+            // Find the symbol with this reference
+            for( SCH_ITEM* item : screen->Items().OfType( SCH_SYMBOL_T ) )
+            {
+                SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
+
+                if( symbol->GetRef( &m_frame->GetCurrentSheet() ) == netPin.m_Reference )
+                {
+                    // Find the pin with this number
+                    SCH_PIN* pin = symbol->GetPin( netPin.m_Pin );
+
+                    if( pin )
+                    {
+                        VECTOR2I pinPos = symbol->GetPinPhysicalPosition( pin );
+                        pinPositions.push_back( pinPos );
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Draw lines connecting all pins in a star topology (all to first pin)
+        if( pinPositions.size() >= 2 )
+        {
+            VECTOR2I centerPin = pinPositions[0];
+
+            for( size_t i = 1; i < pinPositions.size(); i++ )
+            {
+                SCH_LINE* netLine = new SCH_LINE( centerPin, LAYER_NOTES );
+                netLine->SetEndPoint( pinPositions[i] );
+                netLine->SetLineStyle( PLOT_DASH_TYPE::DOT );
+                netLine->SetLineWidth( 2 );  // Thin dotted line
+
+                // Add to screen
+                screen->Append( netLine );
+
+                if( aCommit )
+                    aCommit->Added( netLine, screen );
+            }
+        }
+    }
 }
 
 
