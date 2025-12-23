@@ -3113,6 +3113,58 @@ void SCH_IO_KICAD_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopya
 
     if( m_requiredVersion < 20200828 )
         screen->SetLegacySymbolInstanceData();
+
+    // Create PCB net visualization lines
+    createPcbNetLines( screen );
+}
+
+
+void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
+{
+    const std::vector<PCB_NET>& nets = aScreen->GetPcbNets();
+
+    if( nets.empty() )
+        return;
+
+    for( const PCB_NET& net : nets )
+    {
+        std::vector<VECTOR2I> pinPositions;
+
+        for( const PCB_NET_PIN& netPin : net.m_Pins )
+        {
+            for( SCH_ITEM* item : aScreen->Items().OfType( SCH_SYMBOL_T ) )
+            {
+                SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
+
+                if( symbol->GetReference() == netPin.m_Reference )
+                {
+                    SCH_PIN* pin = symbol->GetPin( netPin.m_Pin );
+
+                    if( pin )
+                    {
+                        VECTOR2I pinPos = symbol->GetPinPhysicalPosition( pin );
+                        pinPositions.push_back( pinPos );
+                    }
+                    break;
+                }
+            }
+        }
+
+        if( pinPositions.size() >= 2 )
+        {
+            VECTOR2I centerPin = pinPositions[0];
+
+            for( size_t i = 1; i < pinPositions.size(); i++ )
+            {
+                SCH_LINE* netLine = new SCH_LINE( centerPin, LAYER_NOTES );
+                netLine->SetEndPoint( pinPositions[i] );
+                netLine->SetLineStyle( LINE_STYLE::DOT );
+                netLine->SetLineWidth( schIUScale.MilsToIU( 10 ) );
+
+                aScreen->Append( netLine );
+            }
+        }
+    }
 }
 
 

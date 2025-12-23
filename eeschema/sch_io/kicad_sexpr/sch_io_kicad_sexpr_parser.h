@@ -225,6 +225,7 @@ private:
     void parseSchSymbolInstances( SCH_SCREEN* aScreen );
     void parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN* aScreen );
     void parsePcbNet( SCH_SCREEN* aScreen );
+    void createPcbNetLines( SCH_SCREEN* aScreen );
 
     void parseGroup();
     void parseGroupMembers( GROUP_INFO& aGroupInfo );
