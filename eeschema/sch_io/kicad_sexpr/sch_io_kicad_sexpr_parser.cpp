@@ -3129,9 +3129,14 @@ void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
     for( const PCB_NET& net : nets )
     {
         std::vector<VECTOR2I> pinPositions;
+        std::vector<wxString> pinRefs;  // Store references for debug
+
+        wxLogMessage( wxT("Processing net: %s"), net.m_Name );
 
         for( const PCB_NET_PIN& netPin : net.m_Pins )
         {
+            wxLogMessage( wxT("  Looking for pin: %s-%s"), netPin.m_Reference, netPin.m_Pin );
+
             for( SCH_ITEM* item : aScreen->Items().OfType( SCH_SYMBOL_T ) )
             {
                 SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
@@ -3139,12 +3144,21 @@ void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
 
                 if( refField && refField->GetText() == netPin.m_Reference )
                 {
+                    wxLogMessage( wxT("    Found symbol at position: (%d, %d)"),
+                                 symbol->GetPosition().x, symbol->GetPosition().y );
+
                     SCH_PIN* pin = symbol->GetPin( netPin.m_Pin );
 
                     if( pin )
                     {
                         VECTOR2I pinPos = symbol->GetPinPhysicalPosition( pin );
+                        wxLogMessage( wxT("    Pin physical position: (%d, %d)"), pinPos.x, pinPos.y );
                         pinPositions.push_back( pinPos );
+                        pinRefs.push_back( netPin.m_Reference + wxT("-") + netPin.m_Pin );
+                    }
+                    else
+                    {
+                        wxLogMessage( wxT("    Pin %s not found!"), netPin.m_Pin );
                     }
                     break;
                 }
@@ -3155,8 +3169,15 @@ void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
         {
             VECTOR2I centerPin = pinPositions[0];
 
+            wxLogMessage( wxT("Creating %zu lines for net '%s':"), pinPositions.size() - 1, net.m_Name );
+            wxLogMessage( wxT("  Center pin %s at: (%d, %d)"), pinRefs[0], centerPin.x, centerPin.y );
+
             for( size_t i = 1; i < pinPositions.size(); i++ )
             {
+                wxLogMessage( wxT("  Line to %s: from (%d, %d) to (%d, %d)"),
+                             pinRefs[i], centerPin.x, centerPin.y,
+                             pinPositions[i].x, pinPositions[i].y );
+
                 SCH_LINE* netLine = new SCH_LINE( centerPin, LAYER_NOTES );
                 netLine->SetEndPoint( pinPositions[i] );
                 netLine->SetLineStyle( LINE_STYLE::DOT );
