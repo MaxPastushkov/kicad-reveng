@@ -2686,47 +2686,43 @@ void SCH_IO_KICAD_SEXPR_PARSER::parsePcbNet( SCH_SCREEN* aScreen )
     NeedSYMBOL();
     net.m_Name = FromUTF8();
 
-    // Parse all pins in this net
+    // Parse all pin entries in this net
+    // Format: (net "name" ( (reference "R75") (pin "2") ) ( (reference "IC28") (pin "1") ) ... )
     for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
-        token = NextTok();
+        // Start of a pin entry group - the outer ( containing (reference...) (pin...)
+        PCB_NET_PIN pin;
 
-        if( token == T_LEFT )
+        for( token = NextTok(); token != T_RIGHT; token = NextTok() )
         {
-            // Start of a pin entry - expect (reference ...) (pin ...)
-            PCB_NET_PIN pin;
+            if( token != T_LEFT )
+                Expecting( T_LEFT );
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            token = NextTok();
+
+            switch( token )
             {
-                if( token != T_LEFT )
-                    Expecting( T_LEFT );
+            case T_reference:
+                NeedSYMBOL();
+                pin.m_Reference = FromUTF8();
+                NeedRIGHT();
+                break;
 
-                token = NextTok();
+            case T_pin:
+                NeedSYMBOL();
+                pin.m_Pin = FromUTF8();
+                NeedRIGHT();
+                break;
 
-                switch( token )
-                {
-                case T_reference:
-                    NeedSYMBOL();
-                    pin.m_Reference = FromUTF8();
-                    NeedRIGHT();
-                    break;
-
-                case T_pin:
-                    NeedSYMBOL();
-                    pin.m_Pin = FromUTF8();
-                    NeedRIGHT();
-                    break;
-
-                default:
-                    Expecting( "reference or pin" );
-                }
+            default:
+                Expecting( "reference or pin" );
             }
-
-            net.m_Pins.emplace_back( pin );
         }
+
+        net.m_Pins.emplace_back( pin );
     }
 
     aScreen->m_pcbNets.emplace_back( net );
