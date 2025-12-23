@@ -3135,7 +3135,7 @@ void SCH_IO_KICAD_SEXPR_PARSER::createPcbNetLines( SCH_SCREEN* aScreen )
             for( SCH_ITEM* item : aScreen->Items().OfType( SCH_SYMBOL_T ) )
             {
                 SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
-                SCH_FIELD* refField = symbol->GetField( REFERENCE_FIELD );
+                SCH_FIELD* refField = symbol->GetField( FIELD_T::REFERENCE );
 
                 if( refField && refField->GetText() == netPin.m_Reference )
                 {
