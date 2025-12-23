@@ -1021,6 +1021,18 @@ SCH_SELECTION& SCH_MOVE_TOOL::prepareSelection( bool& aUnselect )
 {
     SCH_SELECTION& userSelection = m_selectionTool->GetSelection();
 
+    // Debug: Access PCB nets from the screen
+    const std::vector<PCB_NET>& nets = m_frame->GetScreen()->GetPcbNets();
+    wxLogMessage( wxT("Number of PCB nets loaded: %zu"), nets.size() );
+    for( const auto& net : nets )
+    {
+        wxLogMessage( wxT("Net: %s with %zu pins"), net.m_Name, net.m_Pins.size() );
+        for( const auto& pin : net.m_Pins )
+        {
+            wxLogMessage( wxT("  - %s pin %s"), pin.m_Reference, pin.m_Pin );
+        }
+    }
+
     // If a single pin is selected, promote the move selection to its parent symbol
     if( userSelection.GetSize() == 1 )
     {
