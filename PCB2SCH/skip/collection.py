@@ -199,7 +199,7 @@ class NamedElementCollection(ElementCollection):
     
     def _cleanse_key(self, key:str):
         if key is None or not len(key):
-            log.warn(f"Passed key {key} -- can't parsy")
+            log.warn(f"Passed key {key} -- can't parse")
             return '_deadbeef'
         
         key = key.replace('~', 'n')

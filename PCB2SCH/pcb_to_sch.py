@@ -60,7 +60,7 @@ for f in pcb.footprint:
   if len(ref) > 0:
     
     # Update existing symbols
-    existing = schem.symbol.reference_matches(ref)
+    existing = list(filter(lambda s: s.property.Reference.value == ref, schem.symbol))
     if existing:
       existing[0].Value = val
       ignored_symbols.append(ref)
@@ -75,8 +75,6 @@ for f in pcb.footprint:
       clone.move(*get_coords(count))
     
     elif 'Symbol' in f.property:
-      if ref == 'IC30':
-        pass
       sym = skip.Symbol.from_lib(schem, f.property.Symbol.getValue(), ref, *get_coords(count), 1)
       wip_symbols.append(sym.Reference.value) # List of symbols that need further handling
     
@@ -101,7 +99,7 @@ print("Placing remaining units...")
 
 # Add all of the unplaced units
 for ref in wip_symbols:
-  symbol = schem.symbol.reference_matches(ref)[0]
+  symbol = list(filter(lambda s: s.property.Reference.value == ref, schem.symbol))[0]
   if symbol.lib_symbol and 'symbol' in symbol.lib_symbol:
     
     unit_list = [int(s.value.split('_')[-2]) for s in symbol.lib_symbol.symbol] # Get all units
@@ -130,8 +128,6 @@ print("Copying nets...")
 # Write nets to schematic
 netlist = []
 for f in pcb.footprint:
-  if f.property.Reference.value == 'R65':
-    pass
   for p in f.pad:
     if hasattr(p, 'net'):
       
