@@ -160,7 +160,7 @@ private:
                                 const std::vector<DANGLING_END_ITEM>& aInternalPoints );
 
     ///< Update PCB net visualization lines based on loaded net data
-    void updatePcbNetLines( SCH_COMMIT* aCommit );
+    void updatePcbNetLines( SCH_SYMBOL* sym );
 
 private:
     ///< Re-entrancy guard

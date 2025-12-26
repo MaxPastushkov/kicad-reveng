@@ -659,6 +659,14 @@ public:
      */
     double m_LastZoomLevel;
 
+    /**
+     * Map between a symbol and all of its connected PCB lines
+     * The bool represents whether the symbol is at the start
+     * or end point of the line (true = start).
+     * The wxString is the pin number for that connection.
+     */
+    std::unordered_map<wxString, std::vector<std::tuple<SCH_LINE*, bool, wxString>>> m_symbolLineMap;
+
 private:
     wxString    m_fileName;                 // File used to load the screen.
     int         m_fileFormatVersionAtLoad;
